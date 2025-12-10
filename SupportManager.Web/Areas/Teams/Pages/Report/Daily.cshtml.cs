@@ -122,6 +122,40 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
 
             public async Task<Result> Handle(Query request, CancellationToken cancellationToken)
             {
+                List<TimeSlot> weekSlots = CreateWeekSlots();
+
+                var dt = new DateTime(request.Year, request.Month, 1);
+                var dayOfWeek = (int)dt.DayOfWeek;
+                var resultStart = GetResultStart(weekSlots, dt, dayOfWeek);
+                var resultEnd = GetResultEnd(weekSlots, dt);
+
+                var forwardingStates = await GetForwardingStatesInRange(request, resultStart, resultEnd);
+
+                if (!forwardingStates.Any()) return new Result(request.TeamId, request.Year, request.Month) { Weeks = new List<Result.Week>()};
+
+                List<Result.Week> weeks = GetWeeks(weekSlots, resultStart, resultEnd, forwardingStates);
+
+                // Week-samenvattingen
+                foreach (var week in weeks) week.Summaries.AddRange(GetWeekSummaries(week));
+
+                // Dag-samenvattingen (per dag per categorie)
+                foreach (var week in weeks)
+                {
+                    foreach (var day in week.Days)
+                    {
+                        day.Summaries.AddRange(GetDaySummaries(day));
+
+                    }
+                }
+
+                return new Result(request.TeamId, request.Year, request.Month)
+                {
+                    Weeks = weeks
+                };
+            }
+
+            private static List<TimeSlot> CreateWeekSlots()
+            {
                 TimeSlot BuildSlot(DayOfWeek day, double hours, string groupingKey)
                 {
                     return new TimeSlot(TimeSpan.FromDays((int)day).Add(TimeSpan.FromHours(hours)), groupingKey);
@@ -153,24 +187,43 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
 
                 // Zondag 00:00 → Maandag 00:00
                 weekSlots.Add(new TimeSlot(TimeSpan.FromDays(7), WEEKEND));
+                return weekSlots;
+            }
 
-                var dt = new DateTime(request.Year, request.Month, 1);
-                int dayOfWeek = (int)dt.DayOfWeek;
+            private static DateTime GetResultStart(List<TimeSlot> weekSlots, DateTime dt, int dayOfWeek)
+            {
                 var resultStart = dt.AddDays(-dayOfWeek).Add(weekSlots[0].Start);
+                if (resultStart.Month == dt.Month && resultStart.Day > 1) resultStart = resultStart.AddDays(-7);
+                return resultStart;
+            }
+
+            private static DateTime GetResultEnd(List<TimeSlot> weekSlots, DateTime dt)
+            {
                 var nextMonth = dt.AddMonths(1);
                 var resultEnd = nextMonth.AddDays(7 - (int)nextMonth.DayOfWeek).Add(weekSlots[0].Start);
-                if (resultStart.Month == dt.Month && resultStart.Day > 1)
-                {
-                    resultStart = resultStart.AddDays(-7);
-                }
-
-                if (resultEnd.Day > 6)
-                {
-                    resultEnd = resultEnd.AddDays(-7);
-                }
-
+                if (resultEnd.Day > 6) resultEnd = resultEnd.AddDays(-7);
                 if (resultEnd > DateTime.Now) resultEnd = DateTime.Now;
+                return resultEnd;
+            }
 
+            private async Task<List<ForwardingState>> GetForwardingStatesInRange(Query request, DateTime resultStart, DateTime resultEnd)
+            {
+                var registrations = db.ForwardingStates.AsNoTracking().Where(s => s.TeamId == request.TeamId);
+                var lastBefore = await registrations.Where(s => s.When < resultStart)
+                    .OrderByDescending(s => s.When)
+                    .FirstOrDefaultAsync();
+
+                var inRange = await registrations
+                    .Where(s => s.When >= resultStart && s.When <= resultEnd)
+                    .OrderBy(s => s.When)
+                    .ToListAsync();
+
+                if (lastBefore != null) inRange.Insert(0, lastBefore);
+                return inRange;
+            }
+
+            private List<Result.Week> GetWeeks(List<TimeSlot> weekSlots, DateTime resultStart, DateTime resultEnd, List<ForwardingState> forwardingStates)
+            {
                 var weeks = new List<Result.Week>();
                 var slots = new List<(Result.Week week, DateTime start, string groupingKey)>();
 
@@ -187,7 +240,7 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                     };
 
                     // 7 dagen binnen de week
-                    for (int i = 0; i < 7; i++)
+                    for (var i = 0; i < 7; i++)
                     {
                         week.Days.Add(new Result.Day
                         {
@@ -207,31 +260,13 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
 
                 slots.Add((null, resultEnd, null));
 
-                var registrations = db.ForwardingStates.AsNoTracking().Where(s => s.TeamId == request.TeamId);
-                var lastBefore = await registrations.Where(s => s.When < resultStart)
-                    .OrderByDescending(s => s.When)
-                    .FirstOrDefaultAsync();
-
-                var inRange = await registrations
-                    .Where(s => s.When >= resultStart && s.When <= resultEnd)
-                    .OrderBy(s => s.When)
-                    .ToListAsync();
-
-                if (lastBefore != null) inRange.Insert(0, lastBefore);
-
-                if (!inRange.Any())
-                    return new Result(request.TeamId, request.Year, request.Month)
-                    {
-                        Weeks = new List<Result.Week>()
-                    };
-
-                foreach (var (week, start, end, groupingKey) in GetSlots(slots))
+                foreach (var (week, start, end, groupingKey) in GetSlotsWithEndTime(slots))
                 {
-                    var before = inRange.TakeWhile(res => res.When < start).ToList();
+                    var before = forwardingStates.TakeWhile(res => res.When < start).ToList();
                     var skip = before.Count - 1;
                     if (skip == -1) skip = 0;
 
-                    var thisSlot = inRange
+                    var thisSlot = forwardingStates
                         .Skip(skip)
                         .TakeUntil(res => res.When > end)
                         .ToList();
@@ -331,116 +366,110 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                     }
                 }
 
-                // Week-samenvattingen
-                foreach (var week in weeks)
-                {
-                    
-                    var grouped = week.Slots.GroupBy(s => s.GroupingKey);
-                    foreach (var group in grouped)
-                    {
-                        
-                        var participations = new Dictionary<string, (TimeSpan duration, DateTimeOffset? firstStart)>();
-
-                        foreach (var p in group.SelectMany(g => g.Participations))
-                        {
-                            if (string.IsNullOrEmpty(p.UserName)) continue;
-
-                            if (participations.TryGetValue(p.UserName, out var info))
-                            {
-                                var first = info.firstStart;
-                                if (p.FirstStart.HasValue &&
-                                    (!first.HasValue || p.FirstStart.Value < first.Value))
-                                {
-                                    first = p.FirstStart;
-                                }
-
-                                participations[p.UserName] = (info.duration + p.Duration, first);
-                            }
-                            else
-                            {
-                                participations[p.UserName] = (p.Duration, p.FirstStart);
-                            }
-                        }
-
-                        var summary = new Result.Summary
-                        {
-                            Duration = TimeSpan.FromSeconds(
-                                group.Sum(g => (g.EndTime - g.StartTime).TotalSeconds)),
-                            GroupingKey = group.Key,
-                            Participations = participations
-                                .Select(x => new Result.Participation
-                                {
-                                    UserName = x.Key,
-                                    Duration = x.Value.duration,
-                                    FirstStart = x.Value.firstStart
-                                })
-                                .OrderByDescending(p => p.Duration)
-                                .ToList()
-                        };
-
-                        week.Summaries.Add(summary);
-                    }
-                }
-
-                // Dag-samenvattingen (per dag per categorie)
-                foreach (var week in weeks)
-                {
-                    foreach (var day in week.Days)
-                    {
-                        var groupedDay = day.Slots.GroupBy(s => s.GroupingKey);
-                        foreach (var group in groupedDay)
-                        {
-                            var participations = new Dictionary<string, (TimeSpan duration, DateTimeOffset? firstStart)>();
-
-                            foreach (var p in group.SelectMany(g => g.Participations))
-                            {
-                                if (string.IsNullOrEmpty(p.UserName)) continue;
-
-                                if (participations.TryGetValue(p.UserName, out var info))
-                                {
-                                    var first = info.firstStart;
-                                    if (p.FirstStart.HasValue &&
-                                        (!first.HasValue || p.FirstStart.Value < first.Value))
-                                    {
-                                        first = p.FirstStart;
-                                    }
-
-                                    participations[p.UserName] = (info.duration + p.Duration, first);
-                                }
-                                else
-                                {
-                                    participations[p.UserName] = (p.Duration, p.FirstStart);
-                                }
-                            }
-
-                            var summary = new Result.Summary
-                            {
-                                Duration = TimeSpan.FromSeconds(
-                                    group.Sum(g => (g.EndTime - g.StartTime).TotalSeconds)),
-                                GroupingKey = group.Key,
-                                Participations = participations
-                                    .Select(x => new Result.Participation
-                                    {
-                                        UserName = x.Key,
-                                        Duration = x.Value.duration,
-                                        FirstStart = x.Value.firstStart
-                                    })
-                                    .OrderByDescending(p => p.Duration)
-                                    .ToList()
-                            };
-
-                            day.Summaries.Add(summary);
-                        }
-                    }
-                }
-
-                return new Result(request.TeamId, request.Year, request.Month)
-                {
-                    Weeks = weeks
-                };
+                return weeks;
             }
 
-            private IEnumerable<(Result.Week, DateTime, DateTime, string)> GetSlots(
+            public static List<Result.Summary> GetWeekSummaries(Result.Week week)
+            {
+                var summaries = new List<Result.Summary>();
+                var grouped = week.Slots.GroupBy(s => s.GroupingKey);
+                foreach (var group in grouped)
+                {
+                    var participations = new Dictionary<string, (TimeSpan duration, DateTimeOffset? firstStart)>();
+
+                    foreach (var p in group.SelectMany(g => g.Participations))
+                    {
+                        if (string.IsNullOrEmpty(p.UserName)) continue;
+
+                        if (participations.TryGetValue(p.UserName, out var info))
+                        {
+                            var first = info.firstStart;
+                            if (p.FirstStart.HasValue &&
+                                (!first.HasValue || p.FirstStart.Value < first.Value))
+                            {
+                                first = p.FirstStart;
+                            }
+
+                            participations[p.UserName] = (info.duration + p.Duration, first);
+                        }
+                        else
+                        {
+                            participations[p.UserName] = (p.Duration, p.FirstStart);
+                        }
+                    }
+
+                    summaries.Add(new Result.Summary
+                    {
+                        Duration = TimeSpan.FromSeconds(
+                            group.Sum(g => (g.EndTime - g.StartTime).TotalSeconds)),
+                        GroupingKey = group.Key,
+                        Participations = participations
+                            .Select(x => new Result.Participation
+                            {
+                                UserName = x.Key,
+                                Duration = x.Value.duration,
+                                FirstStart = x.Value.firstStart
+                            })
+                            .OrderByDescending(p => p.Duration)
+                            .ToList()
+                    });
+                }
+                return summaries;
+            }
+
+            private static List<Result.Summary> GetDaySummaries(Result.Day day)
+            {
+                var summaries = new List<Result.Summary>();
+
+                var groupedDay = day.Slots.GroupBy(s => s.GroupingKey);
+
+                foreach (var group in groupedDay)
+                {
+                    var participations = new Dictionary<string, (TimeSpan duration, DateTimeOffset? firstStart)>();
+
+                    foreach (var p in group.SelectMany(g => g.Participations))
+                    {
+                        if (string.IsNullOrEmpty(p.UserName)) continue;
+
+                        if (participations.TryGetValue(p.UserName, out var info))
+                        {
+                            var first = info.firstStart;
+                            if (p.FirstStart.HasValue &&
+                                (!first.HasValue || p.FirstStart.Value < first.Value))
+                            {
+                                first = p.FirstStart;
+                            }
+
+                            participations[p.UserName] = (info.duration + p.Duration, first);
+                        }
+                        else
+                        {
+                            participations[p.UserName] = (p.Duration, p.FirstStart);
+                        }
+                    }
+
+                    summaries.Add(new Result.Summary
+                    {
+                        Duration = TimeSpan.FromSeconds(
+                            group.Sum(g => (g.EndTime - g.StartTime).TotalSeconds)),
+                        GroupingKey = group.Key,
+                        Participations = participations
+                            .Select(x => new Result.Participation
+                            {
+                                UserName = x.Key,
+                                Duration = x.Value.duration,
+                                FirstStart = x.Value.firstStart
+                            })
+                            .OrderByDescending(p => p.Duration)
+                            .ToList()
+                    });
+                }
+
+                return summaries;
+            }
+
+
+            private IEnumerable<(Result.Week, DateTime, DateTime, string)> GetSlotsWithEndTime(
                 List<(Result.Week week, DateTime start, string groupingKey)> startTimes)
             {
                 for (int i = 0; i < startTimes.Count - 1; i++)
