@@ -156,9 +156,11 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
 
             private static List<TimeSlot> CreateWeekSlots()
             {
+                int Normalize(DayOfWeek day) => day == DayOfWeek.Sunday ? 7 : (int)day;
+                
                 TimeSlot BuildSlot(DayOfWeek day, double hours, string groupingKey)
                 {
-                    return new TimeSlot(TimeSpan.FromDays((int)day).Add(TimeSpan.FromHours(hours)), groupingKey);
+                    return new TimeSlot(TimeSpan.FromDays(Normalize(day)).Add(TimeSpan.FromHours(hours)), groupingKey);
                 }
 
                 const string WORK = "Kantooruren";
@@ -170,23 +172,31 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                 // Maandag t/m donderdag
                 for (var day = DayOfWeek.Monday; day < DayOfWeek.Friday; day++)
                 {
-                    weekSlots.Add(BuildSlot(day, 7.5, WORK));  // 07:30
-                    weekSlots.Add(BuildSlot(day, 16.5, WEEK)); // 16:30
+                    weekSlots.Add(BuildSlot(day, 7.5, WORK));   // 07:30
+                    weekSlots.Add(BuildSlot(day, 16.5, WEEK));  // 16:30
                 }
 
                 // Vrijdag kantooruren
                 weekSlots.Add(BuildSlot(DayOfWeek.Friday, 7.5, WORK));
 
+                // // --- WEEKEND ---
+                // // Vrijdag 16:30 → Zaterdag 00:00
+                // weekSlots.Add(BuildSlot(DayOfWeek.Friday, 16.5, WEEKEND));
+
+                // // Zaterdag 00:00 → Zondag 00:00
+                // weekSlots.Add(BuildSlot(DayOfWeek.Saturday, 0.0, WEEKEND));
+
+                // // Zondag 00:00 → Maandag 00:00
+                // weekSlots.Add(new TimeSlot(TimeSpan.FromDays(7), WEEKEND));
+
 
                 // --- WEEKEND ---
-                // Vrijdag 16:30 → Zaterdag 00:00
-                weekSlots.Add(BuildSlot(DayOfWeek.Friday, 16.5, WEEKEND));
+                weekSlots.Add(BuildSlot(DayOfWeek.Friday, 16.5, WEEKEND)); // start weekendshift 16:30
 
-                // Zaterdag 00:00 → Zondag 00:00
-                weekSlots.Add(BuildSlot(DayOfWeek.Saturday, 0.0, WEEKEND));
+                // Weekend shifts
+                weekSlots.Add(BuildSlot(DayOfWeek.Saturday, 7.5, WEEKEND)); // zaterdag 07:30
+                weekSlots.Add(BuildSlot(DayOfWeek.Sunday, 7.5, WEEKEND));   // zondag 07:30
 
-                // Zondag 00:00 → Maandag 00:00
-                weekSlots.Add(new TimeSlot(TimeSpan.FromDays(7), WEEKEND));
                 return weekSlots;
             }
 
