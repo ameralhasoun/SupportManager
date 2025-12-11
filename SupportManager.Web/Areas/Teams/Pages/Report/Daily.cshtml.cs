@@ -137,7 +137,18 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
 
                 if (!forwardingStates.Any()) return new Result(request.TeamId, request.Year, request.Month) { Weeks = new List<Result.Week>()};
 
-                List<Result.Week> weeks = GetWeeks(weekSlots, resultStart, resultEnd, forwardingStates);
+                // clamp resultEnd to the last real record in this period
+                var lastRealState = forwardingStates
+                    .Where(s => s.When >= resultStart)  // ignore the inserted "lastBefore"
+                    .OrderByDescending(s => s.When)
+                    .FirstOrDefault();
+
+                if (lastRealState != null && lastRealState.When < resultEnd)
+                {
+                    resultEnd = lastRealState.When.DateTime; 
+                }
+
+                List<Result.Week> weeks = GetWeeks(weekSlots, resultStart, resultEnd, forwardingStates, lastRealState);
 
                 // Week-samenvattingen
                 foreach (var week in weeks) week.Summaries.AddRange(GetWeekSummaries(week));
@@ -236,7 +247,7 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                 return inRange;
             }
 
-            private List<Result.Week> GetWeeks(List<TimeSlot> weekSlots, DateTime resultStart, DateTime resultEnd, List<ForwardingState> forwardingStates)
+            private List<Result.Week> GetWeeks(List<TimeSlot> weekSlots, DateTime resultStart, DateTime resultEnd, List<ForwardingState> forwardingStates, ForwardingState lastRealState)
             {
                 var weeks = new List<Result.Week>();
                 var slots = new List<(Result.Week week, DateTime start, string groupingKey)>();
@@ -337,6 +348,16 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                     }
 
                     var last = thisSlot[thisSlot.Count - 1];
+
+
+                    // if the slot STARTS after the last real DB record,
+                    // then this slot must have no participation.
+                    if (start > lastRealState.When)
+                    {
+                        continue;   // skip adding participation
+                    }
+                    
+
                     if (last.When < end && last.DetectedPhoneNumber != null)
                     {
                         var pStart = last.When;
