@@ -79,6 +79,10 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                 public DateTimeOffset EndTime { get; set; }
                 public string GroupingKey { get; set; }
                 public List<Participation> Participations { get; set; }
+
+                // //! NEW
+                // public List<(DateTimeOffset When, string UserName)> Timeline { get; set; } =
+                //     new List<(DateTimeOffset When, string UserName)>();
             }
 
             public class Summary
@@ -279,6 +283,7 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                     var thisSlot = forwardingStates
                         .Skip(skip)
                         .TakeUntil(res => res.When > end)
+                        /*.TakeWhile(res => res.When <= end)*/ //! NEW(instead of the line above)
                         .ToList();
 
                     if (!thisSlot.Any() || thisSlot[0].When > end)
@@ -350,6 +355,13 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                         }
                     }
 
+                    
+                    // //! New // Build the timeline: all switching events inside this slot
+                    // var timeline = thisSlot
+                    //     .Where(s => s.DetectedPhoneNumber != null && s.When <= end)
+                    //     .Select(s => (s.When, s.DetectedPhoneNumber.User.DisplayName))
+                    //     .ToList();
+
                     var slot = new Result.TimeSlot
                     {
                         StartTime = start,
@@ -364,6 +376,8 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                             })
                             .OrderByDescending(p => p.Duration)
                             .ToList()
+                        // //! NEW
+                        // ,Timeline = timeline
                     };
 
                     week.Slots.Add(slot);
