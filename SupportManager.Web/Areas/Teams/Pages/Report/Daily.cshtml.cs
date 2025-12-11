@@ -325,16 +325,22 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                     for (int j = 0; j < thisSlot.Count - 1; j++)
                     {
                         var state = thisSlot[j];
-                        var pStart = state.When;
-                        if (pStart < start) pStart = start;
+                        // var pStart = state.When;
+                        // if (pStart < start) pStart = start;
+                        // var pEnd = thisSlot[j + 1].When;
+                        // if (pEnd > end) pEnd = end;
 
-                        var pEnd = thisSlot[j + 1].When;
+                        var pStart = RoundTimestampToNearestMinute(state.When);
+                        if (pStart < start) pStart = start;
+                        var pEnd = RoundTimestampToNearestMinute(thisSlot[j + 1].When);
                         if (pEnd > end) pEnd = end;
+
 
                         if (state.DetectedPhoneNumber == null) continue;
 
                         var userName = state.DetectedPhoneNumber.User.DisplayName;
-                        var duration = pEnd - pStart;
+                        // var duration = pEnd - pStart;
+                        var duration = RoundToNearestMinute(pEnd - pStart);
 
                         if (participationDict.TryGetValue(userName, out var info))
                         {
@@ -360,11 +366,16 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
 
                     if (last.When < end && last.DetectedPhoneNumber != null)
                     {
-                        var pStart = last.When;
-                        if (pStart < start) pStart = start;
-                        var duration = end - pStart;
-                        var userName = last.DetectedPhoneNumber.User.DisplayName;
+                        // var pStart = last.When;
+                        // if (pStart < start) pStart = start;
+                        // var duration = end - pStart;
 
+                        var pStart = RoundTimestampToNearestMinute(last.When);
+                        if (pStart < start) pStart = start;
+                        var duration = RoundToNearestMinute(end - pStart);
+
+
+                        var userName = last.DetectedPhoneNumber.User.DisplayName;
                         if (participationDict.TryGetValue(userName, out var info))
                         {
                             var firstStart = info.firstStart <= pStart ? info.firstStart : pStart;
@@ -513,6 +524,32 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                 return summaries;
             }
 
+
+            private static DateTimeOffset RoundTimestampToNearestMinute(DateTimeOffset t)
+            {
+                if (t.Second >= 30)
+                {
+                    // round UP
+                    return new DateTimeOffset(t.Year, t.Month, t.Day, t.Hour, t.Minute, 0, t.Offset)
+                        .AddMinutes(1);
+                }
+                else
+                {
+                    // round DOWN
+                    return new DateTimeOffset(t.Year, t.Month, t.Day, t.Hour, t.Minute, 0, t.Offset);
+                }
+            }
+
+
+            private static TimeSpan RoundToNearestMinute(TimeSpan t)
+            {
+                double totalMinutes = t.TotalSeconds / 60.0;
+
+                // Round half up (>= 30 seconds => next minute)
+                int roundedMinutes = (int)Math.Round(totalMinutes, MidpointRounding.AwayFromZero);
+
+                return TimeSpan.FromMinutes(roundedMinutes);
+            }
 
             private IEnumerable<(Result.Week, DateTime, DateTime, string)> GetSlotsWithEndTime(
                 List<(Result.Week week, DateTime start, string groupingKey)> startTimes)
