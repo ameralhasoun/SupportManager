@@ -247,7 +247,7 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                 return inRange;
             }
 
-            internal List<Result.Week> GetWeeks(List<TimeSlot> weekSlots, DateTime resultStart, DateTime resultEnd, List<ForwardingState> forwardingStates, ForwardingState lastRealState)
+            internal static List<Result.Week> GetWeeks(List<TimeSlot> weekSlots, DateTime resultStart, DateTime resultEnd, List<ForwardingState> forwardingStates, ForwardingState lastRealState)
             {
                 var weeks = new List<Result.Week>();
                 var slots = new List<(Result.Week week, DateTime start, string groupingKey)>();
