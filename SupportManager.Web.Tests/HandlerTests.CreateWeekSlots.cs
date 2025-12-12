@@ -6,7 +6,7 @@ namespace SupportManager.Web.Tests
 {
     public partial class HandlerTests
     {
-        public class CreateWeekSlotsTests
+        public class CreateWeekSlots
         {
             [Fact]
             public void Creates_expected_number_of_week_slots()
