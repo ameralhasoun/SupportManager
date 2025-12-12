@@ -66,7 +66,7 @@
                 {
                     var totalSeconds = summary.Duration.TotalSeconds;
 
-                    // ⭐ NEW LOGIC: highest contributor
+                    // ⭐highest contributor
                     var topContributor = summary.Participations
                         .OrderByDescending(x => x.Duration)
                         .FirstOrDefault();

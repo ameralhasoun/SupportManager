@@ -97,9 +97,9 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                 public string UserName { get; set; }
                 public TimeSpan Duration { get; set; }
 
-                // Eerste startmoment binnen deze groep (slot/week/dag), dus
-                // Wanneer kwam deze gebruiker voor het eerst voor in deze tijdslot?
-                // Was het om 07:30? 08:15? 16:33? 23:47?
+                // First start moment within this group (slot/week/day), thus
+                // When did this user first appear in this time slot?
+                // Was it at 07:30? 08:15? 16:33? 23:47?
                 public DateTimeOffset? FirstStart { get; set; }
             }
         }
@@ -183,33 +183,33 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
 
                 var weekSlots = new List<TimeSlot>();
 
-                // Maandag t/m donderdag
+                // Monday through Thursday
                 for (var day = DayOfWeek.Monday; day < DayOfWeek.Friday; day++)
                 {
                     weekSlots.Add(BuildSlot(day, 7.5, WORK));   // 07:30
                     weekSlots.Add(BuildSlot(day, 16.5, WEEK));  // 16:30
                 }
 
-                // Vrijdag kantooruren
+                // Friday office hours
                 weekSlots.Add(BuildSlot(DayOfWeek.Friday, 7.5, WORK));
 
                 // // --- WEEKEND ---
-                // // Vrijdag 16:30 → Zaterdag 00:00
+                // // Friday 16:30 → Saturday 00:00
                 // weekSlots.Add(BuildSlot(DayOfWeek.Friday, 16.5, WEEKEND));
 
-                // // Zaterdag 00:00 → Zondag 00:00
+                // // Saturday 00:00 → Sunday 00:00
                 // weekSlots.Add(BuildSlot(DayOfWeek.Saturday, 0.0, WEEKEND));
 
-                // // Zondag 00:00 → Maandag 00:00
+                // // Sunday 00:00 → Monday 00:00
                 // weekSlots.Add(new TimeSlot(TimeSpan.FromDays(7), WEEKEND));
 
 
                 // --- WEEKEND ---
-                weekSlots.Add(BuildSlot(DayOfWeek.Friday, 16.5, WEEKEND)); // start weekendshift 16:30
+                weekSlots.Add(BuildSlot(DayOfWeek.Friday, 16.5, WEEKEND)); // start weekend shift 16:30
 
                 // Weekend shifts
-                weekSlots.Add(BuildSlot(DayOfWeek.Saturday, 7.5, WEEKEND)); // zaterdag 07:30
-                weekSlots.Add(BuildSlot(DayOfWeek.Sunday, 7.5, WEEKEND));   // zondag 07:30
+                weekSlots.Add(BuildSlot(DayOfWeek.Saturday, 7.5, WEEKEND)); // Saturday 07:30
+                weekSlots.Add(BuildSlot(DayOfWeek.Sunday, 7.5, WEEKEND));   // Sunday 07:30
 
                 return weekSlots;
             }
@@ -264,7 +264,7 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                         Days = new List<Result.Day>()
                     };
 
-                    // 7 dagen binnen de week
+                    // 7 days within the week
                     for (var i = 0; i < 7; i++)
                     {
                         week.Days.Add(new Result.Day
