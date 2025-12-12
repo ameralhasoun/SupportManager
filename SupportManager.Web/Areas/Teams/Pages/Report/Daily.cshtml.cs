@@ -79,10 +79,6 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                 public DateTimeOffset EndTime { get; set; }
                 public string GroupingKey { get; set; }
                 public List<Participation> Participations { get; set; }
-
-                // //! NEW
-                // public List<(DateTimeOffset When, string UserName)> Timeline { get; set; } =
-                //     new List<(DateTimeOffset When, string UserName)>();
             }
 
             public class Summary
@@ -97,9 +93,7 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                 public string UserName { get; set; }
                 public TimeSpan Duration { get; set; }
 
-                // First start moment within this group (slot/week/day), thus
-                // When did this user first appear in this time slot?
-                // Was it at 07:30? 08:15? 16:33? 23:47?
+                // First start moment within this group (slot/week/day)
                 public DateTimeOffset? FirstStart { get; set; }
             }
         }
@@ -138,7 +132,7 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
 
                 // clamp resultEnd to the last real record in this period
                 var lastRealState = forwardingStates
-                    .Where(s => s.When >= resultStart)  // ignore the inserted "lastBefore"
+                    .Where(s => s.When >= resultStart)
                     .OrderByDescending(s => s.When)
                     .FirstOrDefault();
 
@@ -193,21 +187,8 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                 // Friday office hours
                 weekSlots.Add(BuildSlot(DayOfWeek.Friday, 7.5, WORK));
 
-                // // --- WEEKEND ---
-                // // Friday 16:30 → Saturday 00:00
-                // weekSlots.Add(BuildSlot(DayOfWeek.Friday, 16.5, WEEKEND));
-
-                // // Saturday 00:00 → Sunday 00:00
-                // weekSlots.Add(BuildSlot(DayOfWeek.Saturday, 0.0, WEEKEND));
-
-                // // Sunday 00:00 → Monday 00:00
-                // weekSlots.Add(new TimeSlot(TimeSpan.FromDays(7), WEEKEND));
-
-
                 // --- WEEKEND ---
                 weekSlots.Add(BuildSlot(DayOfWeek.Friday, 16.5, WEEKEND)); // start weekend shift 16:30
-
-                // Weekend shifts
                 weekSlots.Add(BuildSlot(DayOfWeek.Saturday, 7.5, WEEKEND)); // Saturday 07:30
                 weekSlots.Add(BuildSlot(DayOfWeek.Sunday, 7.5, WEEKEND));   // Sunday 07:30
 
@@ -294,7 +275,6 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                     var thisSlot = forwardingStates
                         .Skip(skip)
                         .TakeUntil(res => res.When > end)
-                        /*.TakeWhile(res => res.When <= end)*/ //! NEW(instead of the line above)
                         .ToList();
 
                     if (!thisSlot.Any() || thisSlot[0].When > end)
@@ -325,11 +305,6 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                     for (int j = 0; j < thisSlot.Count - 1; j++)
                     {
                         var state = thisSlot[j];
-                        // var pStart = state.When;
-                        // if (pStart < start) pStart = start;
-                        // var pEnd = thisSlot[j + 1].When;
-                        // if (pEnd > end) pEnd = end;
-
                         var pStart = RoundTimestampToNearestMinute(state.When);
                         if (pStart < start) pStart = start;
                         var pEnd = RoundTimestampToNearestMinute(thisSlot[j + 1].When);
@@ -339,7 +314,6 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                         if (state.DetectedPhoneNumber == null) continue;
 
                         var userName = state.DetectedPhoneNumber.User.DisplayName;
-                        // var duration = pEnd - pStart;
                         var duration = RoundToNearestMinute(pEnd - pStart);
 
                         if (participationDict.TryGetValue(userName, out var info))
@@ -356,8 +330,7 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                     var last = thisSlot[thisSlot.Count - 1];
 
 
-                    // if the slot STARTS after the last real DB record,
-                    // then this slot must have no participation.
+                    // if the slot STARTS after the last real DB record, then this slot must have no participation.
                     if (start > lastRealState.When)
                     {
                         continue;   // skip adding participation
@@ -366,10 +339,6 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
 
                     if (last.When < end && last.DetectedPhoneNumber != null)
                     {
-                        // var pStart = last.When;
-                        // if (pStart < start) pStart = start;
-                        // var duration = end - pStart;
-
                         var pStart = RoundTimestampToNearestMinute(last.When);
                         if (pStart < start) pStart = start;
                         var duration = RoundToNearestMinute(end - pStart);
@@ -387,13 +356,6 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                         }
                     }
 
-                    
-                    // //! New // Build the timeline: all switching events inside this slot
-                    // var timeline = thisSlot
-                    //     .Where(s => s.DetectedPhoneNumber != null && s.When <= end)
-                    //     .Select(s => (s.When, s.DetectedPhoneNumber.User.DisplayName))
-                    //     .ToList();
-
                     var slot = new Result.TimeSlot
                     {
                         StartTime = start,
@@ -408,8 +370,7 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                             })
                             .OrderByDescending(p => p.Duration)
                             .ToList()
-                        // //! NEW
-                        // ,Timeline = timeline
+
                     };
 
                     week.Slots.Add(slot);

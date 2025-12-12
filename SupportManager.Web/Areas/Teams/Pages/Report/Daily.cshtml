@@ -127,31 +127,6 @@
                             {
                                 @:No data yet
                             }
-
-                            @* <!-- NEW TIMELINE BLOCK -->
-                            @if (day.Slots != null)
-                            {
-                                var slotForCategory = day.Slots
-                                    .FirstOrDefault(s => 
-                                        s.GroupingKey == summary.GroupingKey &&
-                                        s.StartTime.Date == day.Date.ToDateTimeUnspecified()
-                                    );
-
-                                if (slotForCategory?.Timeline != null && slotForCategory.Timeline.Any())
-                                {
-                                    <div class="mt-2 small text-muted">
-                                        <strong>Timeline:</strong>
-                                        <ul class="list-unstyled mb-0">
-                                            @foreach (var evt in slotForCategory.Timeline.OrderBy(t => t.When))
-                                            {
-                                                <li>@evt.When.ToString("HH:mm") — @evt.UserName</li>
-                                            }
-                                        </ul>
-                                    </div>
-                                }
-                            }
-                            <!-- The END of the NEW TIMELINE BLOCK --> *@
-
                         </td>
                     </tr>
                 }
