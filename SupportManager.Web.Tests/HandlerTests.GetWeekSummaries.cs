@@ -31,8 +31,6 @@ namespace SupportManager.Web.Tests
                 summaries.Count.ShouldBe(3);
             }
 
-
-
             [Fact]
             public void Returns_One_Summary_Per_GroupingKey()
             {
@@ -98,14 +96,14 @@ namespace SupportManager.Web.Tests
                             StartTime = startTime,
                             EndTime = startTime.AddHours(1),
                             GroupingKey = "A",
-                            Participations = [ new Result.Participation { UserName = "Amer", Duration = TimeSpan.FromMinutes(10), FirstStart = startTime }]
+                            Participations = [ new Result.Participation { UserName = "Miguel", Duration = TimeSpan.FromMinutes(10), FirstStart = startTime }]
                         },
                         new()
                         {
                             StartTime = startTime.AddHours(2),
                             EndTime = startTime.AddHours(3),
                             GroupingKey = "A",
-                            Participations = [ new Result.Participation { UserName = "Amer", Duration = TimeSpan.FromMinutes(20), FirstStart = startTime.AddHours(2) }]
+                            Participations = [ new Result.Participation { UserName = "Miguel", Duration = TimeSpan.FromMinutes(20), FirstStart = startTime.AddHours(2) }]
                         }
                     ]
                 };
@@ -117,7 +115,7 @@ namespace SupportManager.Web.Tests
                 var summary = summaries.First(s => s.GroupingKey == "A");
                 summary.Participations.Count.ShouldBe(1);
                 var p = summary.Participations.First();
-                p.UserName.ShouldBe("Amer");
+                p.UserName.ShouldBe("Miguel");
                 var expectedDuration = TimeSpan.FromMinutes(30);
                 p.Duration.ShouldBe(expectedDuration);
             }
@@ -138,14 +136,14 @@ namespace SupportManager.Web.Tests
                             StartTime = startTime,
                             EndTime = startTime.AddHours(1),
                             GroupingKey = "A",
-                            Participations = [ new Result.Participation { UserName = "Amer", Duration = TimeSpan.FromMinutes(10), FirstStart = first }]
+                            Participations = [ new Result.Participation { UserName = "Miguel", Duration = TimeSpan.FromMinutes(10), FirstStart = first }]
                         },
                         new()
                         {
                             StartTime = startTime.AddHours(2),
                             EndTime = startTime.AddHours(3),
                             GroupingKey = "A",
-                            Participations = [ new Result.Participation { UserName = "Amer", Duration = TimeSpan.FromMinutes(20), FirstStart = earlier } ]
+                            Participations = [ new Result.Participation { UserName = "Miguel", Duration = TimeSpan.FromMinutes(20), FirstStart = earlier } ]
                         }
                     ]
                 };
@@ -155,41 +153,9 @@ namespace SupportManager.Web.Tests
 
                 // Assert
                 var summary = summaries.First(s => s.GroupingKey == "A");
-                var p = summary.Participations.First(x => x.UserName == "Amer");
+                var p = summary.Participations.First(x => x.UserName == "Miguel");
                 p.FirstStart.ShouldBe(earlier);
             }
-
-            // public static IEnumerable<object[]> GetNumberOfSlotsData()
-            // {
-            //     for (int i = 1; i <= 500; i++)
-            //     {
-            //         yield return new object[] { i };
-            //     }
-            // }
-
-            // [Theory]
-            // [MemberData(nameof(GetNumberOfSlotsData))]
-            // public void Returns_Summaries_With_TotalValue_Sum(int numberOfSlots)
-            // {
-            //     // Arrange
-            //     var startTime = DateTimeOffset.Now;
-
-            //     var week = new Result.Week
-            //     {
-            //         Slots =
-            //         [
-            //             new() { StartTime = startTime, EndTime = startTime.AddHours(12), GroupingKey = "A", Participations = [] },
-            //             new() { StartTime = startTime.AddHours(36), EndTime = startTime.AddHours(48), GroupingKey = "B", Participations = [] },
-            //             new() { StartTime = startTime.AddHours(50), EndTime = startTime.AddHours(60), GroupingKey = "C", Participations = [] },
-            //         ]
-            //     };
-
-            //     // Act
-            //     var summaries = Handler.GetWeekSummaries(week);
-
-            //     // Assert
-            //     summaries.Count.ShouldBe(3);
-            // }
         }
     }
 }
