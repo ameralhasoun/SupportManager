@@ -169,7 +169,7 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                 };
             }
 
-            private static List<TimeSlot> CreateWeekSlots()
+            internal static List<TimeSlot> CreateWeekSlots()
             {
                 int Normalize(DayOfWeek day) => day == DayOfWeek.Sunday ? 7 : (int)day;
                 
@@ -215,14 +215,14 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                 return weekSlots;
             }
 
-            private static DateTime GetResultStart(List<TimeSlot> weekSlots, DateTime dt, int dayOfWeek)
+            internal static DateTime GetResultStart(List<TimeSlot> weekSlots, DateTime dt, int dayOfWeek)
             {
                 var resultStart = dt.AddDays(-dayOfWeek).Add(weekSlots[0].Start);
                 if (resultStart.Month == dt.Month && resultStart.Day > 1) resultStart = resultStart.AddDays(-7);
                 return resultStart;
             }
 
-            private static DateTime GetResultEnd(List<TimeSlot> weekSlots, DateTime dt)
+            internal static DateTime GetResultEnd(List<TimeSlot> weekSlots, DateTime dt)
             {
                 var nextMonth = dt.AddMonths(1);
                 var resultEnd = nextMonth.AddDays(7 - (int)nextMonth.DayOfWeek).Add(weekSlots[0].Start);
@@ -231,7 +231,7 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                 return resultEnd;
             }
 
-            private async Task<List<ForwardingState>> GetForwardingStatesInRange(Query request, DateTime resultStart, DateTime resultEnd)
+            internal async Task<List<ForwardingState>> GetForwardingStatesInRange(Query request, DateTime resultStart, DateTime resultEnd)
             {
                 var registrations = db.ForwardingStates.AsNoTracking().Where(s => s.TeamId == request.TeamId);
                 var lastBefore = await registrations.Where(s => s.When < resultStart)
@@ -247,7 +247,7 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                 return inRange;
             }
 
-            private List<Result.Week> GetWeeks(List<TimeSlot> weekSlots, DateTime resultStart, DateTime resultEnd, List<ForwardingState> forwardingStates, ForwardingState lastRealState)
+            internal List<Result.Week> GetWeeks(List<TimeSlot> weekSlots, DateTime resultStart, DateTime resultEnd, List<ForwardingState> forwardingStates, ForwardingState lastRealState)
             {
                 var weeks = new List<Result.Week>();
                 var slots = new List<(Result.Week week, DateTime start, string groupingKey)>();
@@ -473,7 +473,7 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                 return summaries;
             }
 
-            private static List<Result.Summary> GetDaySummaries(Result.Day day)
+            internal static List<Result.Summary> GetDaySummaries(Result.Day day)
             {
                 var summaries = new List<Result.Summary>();
 
@@ -525,7 +525,7 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
             }
 
 
-            private static DateTimeOffset RoundTimestampToNearestMinute(DateTimeOffset t)
+            internal static DateTimeOffset RoundTimestampToNearestMinute(DateTimeOffset t)
             {
                 if (t.Second >= 30)
                 {
@@ -541,7 +541,7 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
             }
 
 
-            private static TimeSpan RoundToNearestMinute(TimeSpan t)
+            internal static TimeSpan RoundToNearestMinute(TimeSpan t)
             {
                 double totalMinutes = t.TotalSeconds / 60.0;
 
@@ -551,7 +551,7 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                 return TimeSpan.FromMinutes(roundedMinutes);
             }
 
-            private IEnumerable<(Result.Week, DateTime, DateTime, string)> GetSlotsWithEndTime(
+            internal IEnumerable<(Result.Week, DateTime, DateTime, string)> GetSlotsWithEndTime(
                 List<(Result.Week week, DateTime start, string groupingKey)> startTimes)
             {
                 for (int i = 0; i < startTimes.Count - 1; i++)
