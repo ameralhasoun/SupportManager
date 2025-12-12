@@ -6,7 +6,7 @@ namespace SupportManager.Web.Tests
 {
     public partial class HandlerTests
     {
-        public class RoundTimestampToNearestMinuteTests
+        public class RoundTimestampToNearestMinute
         {
             [Fact]
             public void Rounds_down_when_seconds_less_than_30()
