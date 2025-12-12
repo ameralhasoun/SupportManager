@@ -9,7 +9,7 @@ namespace SupportManager.Web.Tests
         public class RoundTimestampToNearestMinute
         {
             [Fact]
-            public void Rounds_down_when_seconds_less_than_30()
+            public void Rounds_Down_When_Seconds_Less_Than_30()
             {
                 // Arrange
                 var input = new DateTimeOffset(2025, 1, 1, 10, 15, 29, TimeSpan.FromHours(1));
@@ -22,7 +22,7 @@ namespace SupportManager.Web.Tests
             }
 
             [Fact]
-            public void Rounds_up_when_seconds_are_30_or_more()
+            public void Rounds_Up_When_Seconds_Are_30_Or_More()
             {
                 // Arrange
                 var input = new DateTimeOffset(2025, 1, 1, 10, 15, 30, TimeSpan.FromHours(1));
@@ -35,7 +35,7 @@ namespace SupportManager.Web.Tests
             }
 
             [Fact]
-            public void Rounds_up_across_hour_boundary()
+            public void Rounds_Up_Across_Hour_Boundary()
             {
                 // Arrange
                 var input = new DateTimeOffset(2025, 1, 1, 10, 59, 45, TimeSpan.Zero);

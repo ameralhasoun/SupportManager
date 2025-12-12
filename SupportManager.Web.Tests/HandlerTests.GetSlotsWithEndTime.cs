@@ -9,7 +9,7 @@ namespace SupportManager.Web.Tests
         public class GetSlotsWithEndTime
         {
             [Fact]
-            public void Returns_one_less_slot_than_start_times()
+            public void Returns_One_Less_Slot_Than_Start_Times()
             {
                 // Arrange
                 var week = new Result.Week();
@@ -29,7 +29,7 @@ namespace SupportManager.Web.Tests
             }
 
             [Fact]
-            public void Uses_next_start_time_as_end_time()
+            public void Uses_Next_Start_Time_As_End_Time()
             {
                 // Arrange
                 var week = new Result.Week();
@@ -55,7 +55,7 @@ namespace SupportManager.Web.Tests
             }
 
             [Fact]
-            public void Preserves_grouping_key_of_start_slot()
+            public void Preserves_Grouping_Key_Of_Start_Slot()
             {
                 // Arrange
                 var week = new Result.Week();

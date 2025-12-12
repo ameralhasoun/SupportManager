@@ -9,7 +9,7 @@ namespace SupportManager.Web.Tests
         public class RoundToNearestMinute
         {
             [Fact]
-            public void Rounds_down_when_less_than_30_seconds()
+            public void Rounds_Down_When_Less_Than_30_Seconds()
             {
                 // Arrange
                 var input = TimeSpan.FromSeconds(29);
@@ -22,7 +22,7 @@ namespace SupportManager.Web.Tests
             }
 
             [Fact]
-            public void Rounds_up_at_30_seconds()
+            public void Rounds_Up_At_30_Seconds()
             {
                 // Arrange
                 var input = TimeSpan.FromSeconds(30);
@@ -35,7 +35,7 @@ namespace SupportManager.Web.Tests
             }
 
             [Fact]
-            public void Rounds_up_when_more_than_30_seconds()
+            public void Rounds_Up_When_More_Than_30_Seconds()
             {
                 // Arrange
                 var input = TimeSpan.FromSeconds(91); // 1:31
@@ -48,7 +48,7 @@ namespace SupportManager.Web.Tests
             }
 
             [Fact]
-            public void Exact_minutes_are_not_changed()
+            public void Exact_Minutes_Are_Not_Changed()
             {
                 // Arrange
                 var input = TimeSpan.FromMinutes(5);

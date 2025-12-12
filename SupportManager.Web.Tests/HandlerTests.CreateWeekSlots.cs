@@ -9,7 +9,7 @@ namespace SupportManager.Web.Tests
         public class CreateWeekSlots
         {
             [Fact]
-            public void Creates_expected_number_of_week_slots()
+            public void Creates_Expected_Number_Of_Week_Slots()
             {
                 // Act
                 var slots = Handler.CreateWeekSlots();
@@ -19,7 +19,7 @@ namespace SupportManager.Web.Tests
             }
 
             [Fact]
-            public void First_slot_is_monday_kantooruren_at_07_30()
+            public void First_Slot_Is_Monday_Kantooruren_At_07_30()
             {
                 // Act
                 var slots = Handler.CreateWeekSlots();
@@ -34,7 +34,7 @@ namespace SupportManager.Web.Tests
             }
 
             [Fact]
-            public void Contains_doordeweeks_slot_at_16_30()
+            public void Contains_Doordeweeks_Slot_At_16_30()
             {
                 // Act
                 var slots = Handler.CreateWeekSlots();
@@ -49,7 +49,7 @@ namespace SupportManager.Web.Tests
             }
 
             [Fact]
-            public void Contains_three_weekend_slots()
+            public void Contains_Three_Weekend_Slots()
             {
                 // Act
                 var slots = Handler.CreateWeekSlots();
@@ -61,7 +61,7 @@ namespace SupportManager.Web.Tests
             }
 
             [Fact]
-            public void Weekend_starts_on_friday_at_16_30()
+            public void Weekend_Starts_On_Friday_At_16_30()
             {
                 // Act
                 var slots = Handler.CreateWeekSlots();
@@ -75,7 +75,7 @@ namespace SupportManager.Web.Tests
             }
 
             [Fact]
-            public void Sunday_weekend_slot_is_normalized_to_day_7()
+            public void Sunday_Weekend_Slot_Is_Normalized_To_Day_7()
             {
                 // Act
                 var slots = Handler.CreateWeekSlots();
