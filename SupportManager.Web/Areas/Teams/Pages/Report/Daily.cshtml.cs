@@ -129,8 +129,7 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                 List<TimeSlot> weekSlots = CreateWeekSlots();
 
                 var dt = new DateTime(request.Year, request.Month, 1);
-                var dayOfWeek = (int)dt.DayOfWeek;
-                var resultStart = GetResultStart(weekSlots, dt, dayOfWeek);
+                var resultStart = GetResultStart(weekSlots, dt);
                 var resultEnd = GetResultEnd(weekSlots, dt);
 
                 var forwardingStates = await GetForwardingStatesInRange(request, resultStart, resultEnd);
@@ -215,8 +214,9 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                 return weekSlots;
             }
 
-            internal static DateTime GetResultStart(List<TimeSlot> weekSlots, DateTime dt, int dayOfWeek)
+            internal static DateTime GetResultStart(List<TimeSlot> weekSlots, DateTime dt)
             {
+                var dayOfWeek = (int)dt.DayOfWeek;
                 var resultStart = dt.AddDays(-dayOfWeek).Add(weekSlots[0].Start);
                 if (resultStart.Month == dt.Month && resultStart.Day > 1) resultStart = resultStart.AddDays(-7);
                 return resultStart;
