@@ -551,7 +551,7 @@ namespace SupportManager.Web.Areas.Teams.Pages.Report
                 return TimeSpan.FromMinutes(roundedMinutes);
             }
 
-            internal IEnumerable<(Result.Week, DateTime, DateTime, string)> GetSlotsWithEndTime(
+            internal static IEnumerable<(Result.Week, DateTime, DateTime, string)> GetSlotsWithEndTime(
                 List<(Result.Week week, DateTime start, string groupingKey)> startTimes)
             {
                 for (int i = 0; i < startTimes.Count - 1; i++)
